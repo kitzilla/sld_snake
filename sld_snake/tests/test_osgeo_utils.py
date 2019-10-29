@@ -7,6 +7,8 @@ from ..osgeo.utils import OgrWrapper
 
 
 def test_OgrWrapper_OgrWrapper():
+    from osgeo import ogr
+
     geojson1 = {
         'type': 'Point',
         'coordinates': [11, 13],
@@ -30,7 +32,7 @@ def test_OgrWrapper_OgrWrapper():
     }
     wrapper = OgrWrapper(geojson2)
     assert wrapper._ogr.GetPointCount() == 2
-    
+
     wrapper = OgrWrapper(json.dumps(geojson2))
     assert wrapper._ogr.GetX(1) == 15
 
@@ -68,7 +70,7 @@ def test_OgrWrapper_OgrWrapper():
     assert wrapper._ogr.GetGeometryCount() == 2
     assert wrapper._ogr.GetSpatialReference().GetAuthorityCode(None) == '27700'
 
-    
+
     gml2 = '''
     <gml:Polygon>
         <gml:outerBoundaryIs>
@@ -88,8 +90,8 @@ def test_OgrWrapper_OgrWrapper():
     '''
     wrapper = OgrWrapper(gml3)
     assert wrapper._ogr.GetPointCount() == 2
-    
-    
+
+
     root = ET.fromstring('''
     <gml:Polygon  xmlns:gml="http://www.opengis.net/gml" >
         <gml:outerBoundaryIs>
@@ -101,7 +103,7 @@ def test_OgrWrapper_OgrWrapper():
     ''')
     wrapper = OgrWrapper(root)
     assert wrapper._ogr.GetGeometryRef(0).GetPointCount() == 5
-    
+
     root = ET.fromstring('''
     <gml:Polygen  xmlns:gml="http://www.opengis.net/gml" >
         <gml:outerBoundaryIs>
@@ -113,8 +115,18 @@ def test_OgrWrapper_OgrWrapper():
     ''')
     with pytest.raises(ValueError):
         wrapper = OgrWrapper(root)
-    
-    
+
+
+    envelope1 = '''
+    <gml:Envelope xmlns:gml="http://www.opengis.net/gml">
+        <gml:lowerCorner>12.03 44.32</gml:lowerCorner>
+        <gml:upperCorner>22.34 52.39</gml:upperCorner>
+    </gml:Envelope>
+    '''
+    wrapper = OgrWrapper(envelope1)
+    wrapper._ogr.GetGeometryType() == ogr.wkbPolygon
+
+
 def test_OgrWrapper_gml2():
     wrapper = OgrWrapper('POLYGON ((35 10, 45 45, 15 40, 10 20, 35 10),(20 30, 35 35, 30 20, 20 30))', 3857)
     assert wrapper.gml2 == re.sub(
@@ -136,11 +148,11 @@ def test_OgrWrapper_gml2():
         '''.strip()
     )
     print(wrapper.gml3)
-    
-    
+
+
 def test_OgrWrapper_gml3():
     wrapper = OgrWrapper('MULTIPOLYGON (((30 20, 45 40, 10 40, 30 20)), ((15 5, 40 10, 10 20, 5 10, 15 5)))', 3857)
-    
+
     # It seems GML3 does not work properly in SLD
     assert wrapper.gml3 == re.sub(
         r'>\s+<',

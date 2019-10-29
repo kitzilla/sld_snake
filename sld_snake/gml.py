@@ -31,7 +31,7 @@ class Geometry(ElemAbstract):
     def _parse_gml(source):
         if not isinstance(source, (str, ET.Element)):
             raise TypeError(f'Argument is not string: {repr(source)}')
-        
+
         GML = NAMESPACES["gml"]  # http://www.opengis.net/gml
         source_original = source
         root = None
@@ -64,10 +64,10 @@ class Geometry(ElemAbstract):
             raise ValueError(f'Argument is not GML Geometry: {repr(source_original)}')
         return root
 
-    def etree(self):
+    def etree(self, config=None):
         if self._etree:
             return self._etree
-        gml = self._ogr.gml2()
+        gml = self._ogr.gml2
         return self._parse_gml(gml)
 
     def simulate(self, *args, **kwargs):

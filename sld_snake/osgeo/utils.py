@@ -6,46 +6,29 @@ from ..base import ET
 
 
 class OgrWrapper:
-    def __init__(self, source, epsg=None):
+    def __init__(self, source, srid=None):
         self.source = source
-        self.epsg = epsg
+        self._ogr = None
+
         if type(source) == ogr.Geometry:
             self._ogr = source
         else:
-            self._ogr = self.to_ogr()
+            self._ogr = self._to_ogr(source, srid)
 
-    @property
-    def epsg(self):
-        return self._epsg
-
-    @epsg.setter
-    def epsg(self, value):
-        if value is None:
-            self._epsg = None
-            return
-
-        if type(value) != int:
-            raise TypeError('epsg must be int')
-
-        srs = osr.SpatialReference()
-        if srs.ImportFromEPSG(value) != 0:
-            raise ValueError(f'GDAL could not resolve EPSG {value}. Is this a valid EPSG code?')
-        self._epsg = value
-
-    def to_ogr(self, source=None):
-        if source is None:
-            source = self.source
-
+    @staticmethod
+    def _to_ogr(source, srid=None):
         geom = None
         if isinstance(source, dict):
+            # GeoJSON
             if not 'coordinates' in source:
                 if 'features' in source:
                     raise ValueError(f'FeatureCollection {repr(source)} cannot be converted to a single OGR Geometry')
-                    
+
                 if 'geometry' in source:
                     source = source['geometry']
                 else:
                     raise ValueError(f'{repr(source)} doesn\'t look like a valid GeoJSON')
+
             geom_str = json.dumps(source)
             geom = ogr.CreateGeometryFromJson(geom_str)
             if geom is None:
@@ -57,13 +40,15 @@ class OgrWrapper:
             except json.JSONDecodeError:
                 pass
             else:
-                return self.to_ogr(jsn)
+                # GeoJSON string
+                return OgrWrapper._to_ogr(jsn, srid)
+
             wkt = source
             m = re.match(r'\s*SRID=(\d*)\s*;(.*)$', wkt)  # Extended WKT
             if m:
-                if self.epsg is None:
-                    self.epsg = int(m.group(1))  # epsg provided to constructor supersedes
+                srid = int(m.group(1))
                 wkt = m.group(2)
+            # Try WKT
             geom = ogr.CreateGeometryFromWkt(wkt)
 
             if geom is None:
@@ -74,61 +59,94 @@ class OgrWrapper:
         elif isinstance(source, ET.Element):
             xml = ET.tostring(source, encoding='utf-8').decode()
             try:
-                return self.to_ogr(xml)
+                return OgrWrapper._to_ogr(xml)
             except ValueError:
                 raise ValueError(f'{repr(source)} is not representing a valid GML')
 
         else:
             raise TypeError(f'{repr(source)} cannot be converted to OGR Geometry' )
 
-        if type(self.epsg) == int:
-            srs = osr.SpatialReference()
-            srs.ImportFromEPSG(self.epsg)
-            geom.AssignSpatialReference(srs)
+        if srid is not None:
+            OgrWrapper._set_srs(geom, srid)
+
         return geom
+
+    @staticmethod
+    def _create_srs(srid):
+        if type(srid) != int:
+            raise TypeError('srid is not integer')
+
+        srs = osr.SpatialReference()
+        if srs.ImportFromEPSG(srid) != 0:
+            raise ValueError(f'GDAL could not resolve EPSG {srid}. Is this a valid EPSG code?')
+        return srs
+
+    @staticmethod
+    def _set_srs(geom, srid):
+        if type(geom) != ogr.Geometry:
+            raise TypeError('geom is not ogr.Geometry object')
+        srs = OgrWrapper._create_srs(srid)
+        geom.AssignSpatialReference(srs)
+
+    def transform_to(self, srs):
+        if type(srs) != osr.SpatialReference:
+            raise ValueError('srs is not osr.SpatialReference instance')
+
+        srs_from = self.spatial_ref
+        if srs_from is None:
+            srs_from = self._create_srs(srid=4326)
+
+        copy = OgrWrapper(self.source, None)
+        transform = osr.CoordinateTransformation(srs_from, srs)
+        copy._ogr.Transform(transform)
+        return copy
+
+    @property
+    def spatial_ref(self):
+        return self._ogr.GetSpatialReference()
 
     @property
     def gml2(self):
         return self._ogr.ExportToGML()
-    
+
     @property
     def gml3(self):
         return self._ogr.ExportToGML(options=['FORMAT=GML3', 'GML3_LONGSRS=NO'])
-    
+
     @classmethod
     def wrap(klass, obj):
         if isinstance(obj, OgrWrapper):
             return obj
         return klass(obj)
-    
+
     def intersects(self, other):
         other = self.wrap(other)
         return self._ogr.Intersects(other._ogr)
-    
+
     def disjoint(self, other):
         other = self.wrap(other)
         return self._ogr.Disjoint(other._ogr)
-        
+
     def touches(self, other):
         other = self.wrap(other)
         return self._ogr.Touches(other._ogr)
-        
+
     def equals(self, other):
         other = self.wrap(other)
         return self._ogr.Equals(other._ogr)
-        
+
     def crosses(self, other):
         other = self.wrap(other)
         return self._ogr.Crosses(other._ogr)
-        
+
     def contains(self, other):
         other = self.wrap(other)
         return self._ogr.Contains(other._ogr)
-        
+
     def within(self, other):
         other = self.wrap(other)
         return self._ogr.Within(other._ogr)
-        
+
     def overlaps(self, other):
         other = self.wrap(other)
         return self._ogr.Overlaps(other._ogr)

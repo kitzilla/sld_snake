@@ -8,7 +8,7 @@ from ..gml import Geometry
 
 
 def test_Geometry_parse_gml():
-    
+
     # Typical GML (no xmlns)
     gml2 = '''
     <gml:Polygon>
@@ -22,7 +22,7 @@ def test_Geometry_parse_gml():
     root = Geometry._parse_gml(gml2)
     assert root.tag == '{http://www.opengis.net/gml}Polygon'
 
-    # GML with not prefix
+    # GML with no prefix
     gml3 = '''
     <LineString>
         <posList srsDimension="2">45.67 88.56 55.56 89.44</posList>
@@ -30,7 +30,7 @@ def test_Geometry_parse_gml():
     '''
     root = Geometry._parse_gml(gml3)
     assert root.tag == '{http://www.opengis.net/gml}LineString'
-    
+
     # GML with different prefix (no xmlns)
     gml4 = '''
     <ns0:Polygon srsName="EPSG:3857">
@@ -87,8 +87,18 @@ def test_Geometry_parse_gml():
     root = Geometry._parse_gml(elem)
     assert root.tag == '{http://www.opengis.net/gml}Point'
 
+    envelope1 = '''
+    <gml:Envelope xmlns:gml="http://www.opengis.net/gml">
+        <gml:lowerCorner>12.03 44.32</gml:lowerCorner>
+        <gml:upperCorner>22.34 52.39</gml:upperCorner>
+    </gml:Envelope>
+    '''
+    root = Geometry._parse_gml(envelope1)
+    assert root.tag == '{http://www.opengis.net/gml}Envelope'
 
-    
+
+
+
 # def test_OgrWrapper_gml2():
     # wrapper = OgrWrapper('POLYGON ((35 10, 45 45, 15 40, 10 20, 35 10),(20 30, 35 35, 30 20, 20 30))', 3857)
     # assert wrapper.gml2 == re.sub(
@@ -110,11 +120,11 @@ def test_Geometry_parse_gml():
         # '''.strip()
     # )
     # print(wrapper.gml3)
-    
-    
+
+
 # def test_OgrWrapper_gml3():
     # wrapper = OgrWrapper('MULTIPOLYGON (((30 20, 45 40, 10 40, 30 20)), ((15 5, 40 10, 10 20, 5 10, 15 5)))', 3857)
-    
+
     # # It seems GML3 does not work properly in SLD
     # assert wrapper.gml3 == re.sub(
         # r'>\s+<',
