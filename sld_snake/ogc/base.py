@@ -78,8 +78,6 @@ class Literal(Expression):
     class CannotCastError(Exception):
         pass
 
-    tagName = 'Literal'
-    
     def __init__(self, obj):
         super().__init__()
         self.text = stringify(obj)
@@ -89,8 +87,6 @@ class Literal(Expression):
 
 
 class PropertyName(Expression):
-    tagName = 'PropertyName'
-
     def __init__(self, property_name):
         super().__init__()
 

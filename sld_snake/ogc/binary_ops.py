@@ -21,32 +21,24 @@ class BinaryOperator(Expression, TwoExpressionMixin):
 
 
 class Add(BinaryOperator):
-    tagName = 'Add'
-
     def simulate(self, *args, **kwargs):
         val0, val1 = super().simulate(*args, **kwargs)
         return val0 + val1
 
 
 class Sub(BinaryOperator):
-    tagName = 'Sub'
-
     def simulate(self, *args, **kwargs):
         val0, val1 = super().simulate(*args, **kwargs)
         return val0 - val1
 
 
 class Mul(BinaryOperator):
-    tagName = 'Mul'
-
     def simulate(self, *args, **kwargs):
         val0, val1 = super().simulate(*args, **kwargs)
         return val0 * val1
 
 
 class Div(BinaryOperator):
-    tagName = 'Div'
-
     def simulate(self, *args, **kwargs):
         val0, val1 = super().simulate(*args, **kwargs)
 

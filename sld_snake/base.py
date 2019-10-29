@@ -50,6 +50,10 @@ class ElemAbstract:
 
     def validate(self):
         pass
+        
+    @property
+    def tagName(self):
+        return type(self).__name__
 
     def etree(self, config=None):
         uri = self.NAMESPACES[self.nameSpace]

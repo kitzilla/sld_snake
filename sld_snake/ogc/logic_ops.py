@@ -77,7 +77,6 @@ class BinaryLogicOp(LogicOp):
 
 
 class Not(UnaryLogicOp):
-    tagName = 'Not'
     def simulate(self, data):
         return not self.conditions[0].simulate(data)
 
@@ -86,8 +85,6 @@ class Not(UnaryLogicOp):
 
 
 class And(BinaryLogicOp):
-    tagName = 'And'
-    
     def simulate(self, data):
         return all(cond.simulate(data) is True for cond in self.conditions.values())
         
@@ -105,8 +102,6 @@ class And(BinaryLogicOp):
         
 
 class Or(BinaryLogicOp):
-    tagName = 'Or'
-
     def simulate(self, data):
         return any(cond.simulate(data) is True for cond in self.conditions.values())
 

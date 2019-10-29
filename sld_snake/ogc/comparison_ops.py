@@ -85,48 +85,35 @@ class BinaryComparisonOp(ComparisonOps, TwoExpressionMixin, MatchCaseMixin):
 
 
 class PropertyIsEqualTo(BinaryComparisonOp):
-    tagName = 'PropertyIsEqualTo'
-
     def simulate(self, *args, **kwargs):
         return super().simulate(*args, **kwargs) == 0
 
 
 class PropertyIsNotEqualTo(BinaryComparisonOp):
-    tagName = 'PropertyIsNotEqualTo'
-
     def simulate(self, *args, **kwargs):
         return super().simulate(*args, **kwargs) != 0
 
 class PropertyIsGreaterThan(BinaryComparisonOp):
-    tagName = 'PropertyIsGreaterThan'
-
     def simulate(self, *args, **kwargs):
         return super().simulate(*args, **kwargs) > 0
 
 
 class PropertyIsLessThan(BinaryComparisonOp):
-    tagName = 'PropertyIsLessThan'
-
     def simulate(self, *args, **kwargs):
         return super().simulate(*args, **kwargs) < 0
 
 
 class PropertyIsGreaterThanOrEqualTo(BinaryComparisonOp):
-    tagName = 'PropertyIsGreaterThanOrEqualTo'
-
     def simulate(self, *args, **kwargs):
         return super().simulate(*args, **kwargs) >= 0
 
 
 class PropertyIsLessThanOrEqualTo(BinaryComparisonOp):
-    tagName = 'PropertyIsLessThanOrEqualTo'
-
     def simulate(self, *args, **kwargs):
         return super().simulate(*args, **kwargs) <= 0
 
 
 class PropertyIsLike(ComparisonOps, PropertyNameMixin, MatchCaseMixin):
-    tagName = 'PropertyIsLike'
     def __init__(self, propertyname, pattern, wildCard='%', singleChar='_', escapeChar='\\', matchCase=None):
         super().__init__()
         self.propertyName = propertyname
@@ -257,8 +244,6 @@ class PropertyIsLike(ComparisonOps, PropertyNameMixin, MatchCaseMixin):
 # The behaviour for inline features is coded in GeoServer but the latter depends on how the source DB treats 
 # empty strings against SQL 'WHERE column IS NULL'
 class PropertyIsNull(ComparisonOps, PropertyNameMixin):
-    tagName = 'PropertyIsNull'
-
     def __init__(self, propertyname):
         super().__init__()
         self.propertyName = propertyname
@@ -278,21 +263,19 @@ class PropertyIsBetweenBoundary(OgcAbstract, OneExpressionMixin, OneExpressionOv
 
 
 class LowerBoundary(PropertyIsBetweenBoundary):
-    tagName = 'LowerBoundary'
-
+    pass
 
 class UpperBoundary(PropertyIsBetweenBoundary):
-    tagName = 'UpperBoundary'
+    pass
 
 
 class PropertyIsBetween(ComparisonOps, OneExpressionMixin):
-    tagName = 'PropertyIsBetween'
-    
     def __init__(self, expr, lower_bounadry, upper_boundary):
         super().__init__()
         self.expr0 = expr
         self.lowerBoundary = lower_bounadry
         self.upperBoundary = upper_boundary
+        print(self.lowerBoundary)
         
     def simulate(self, *args, **kwargs):
         test1 = PropertyIsGreaterThanOrEqualTo(self.expr0, self.lowerBoundary.expr0)
@@ -301,16 +284,14 @@ class PropertyIsBetween(ComparisonOps, OneExpressionMixin):
         return test1.simulate(*args, **kwargs) and test2.simulate(*args, **kwargs)
         
     def _set_boundary(self, expr, klass):
-        index = klass.tagName
-
         if isinstance(expr, klass):
-            self.children[index] = obj
+            self.children[klass] = obj
         else:
-            self.children[index] = klass(expr)
+            self.children[klass] = klass(expr)
 
     @property
     def lowerBoundary(self):
-        return self.children.get(LowerBoundary.tagName, None)
+        return self.children.get(LowerBoundary, None)
 
     @lowerBoundary.setter
     def lowerBoundary(self, expr):
@@ -318,7 +299,7 @@ class PropertyIsBetween(ComparisonOps, OneExpressionMixin):
 
     @property
     def upperBoundary(self):
-        return self.children.get(UpperBoundary.tagName, None)
+        return self.children.get(UpperBoundary, None)
 
     @upperBoundary.setter
     def upperBoundary(self, expr):
